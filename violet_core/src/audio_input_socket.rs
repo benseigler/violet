@@ -1,7 +1,7 @@
 use std::ops::Mul;
 
 use num::cast::AsPrimitive;
-use xpans_render::input::{BufferedInput, FractionalInput, SampleRate};
+use xpans_render::host::{BackwardIndex, FractionalIndex, SampleRate};
 
 use crate::audio_input::{AudioInput, BufferedAudioInput, FractionalAudioInput};
 
@@ -11,8 +11,7 @@ where
     Input: AudioInput,
 {
     input: Input,
-    pub(crate) channel: usize,
-    pub(crate) frame: usize,
+    frames: usize,
 }
 
 impl<Input> AudioInputSocket<Input>
@@ -20,11 +19,7 @@ where
     Input: AudioInput,
 {
     pub(crate) fn new(input: Input) -> Self {
-        Self {
-            input,
-            channel: 0,
-            frame: 0,
-        }
+        Self { input, frames: 0 }
     }
     pub(crate) fn input(&self) -> &Input {
         &self.input
@@ -32,14 +27,24 @@ where
     pub(crate) fn input_mut(&mut self) -> &mut Input {
         &mut self.input
     }
+
+    pub(crate) fn set_frames(&mut self, frames: usize) {
+        self.frames = frames;
+    }
 }
 
-impl<Input> xpans_render::input::Input<Input::Sample> for AudioInputSocket<Input>
+impl<Input> xpans_render::host::Input<Input::Sample> for AudioInputSocket<Input>
 where
     Input: AudioInput,
 {
-    fn current_sample(&self) -> Input::Sample {
-        self.input.sample(self.channel, self.frame)
+    fn frames(&self) -> usize {
+        self.frames
+    }
+    fn sources(&self) -> usize {
+        self.input().channel_count()
+    }
+    fn sample(&self, frame: usize, source: usize) -> Input::Sample {
+        self.input.sample(source, frame)
     }
 }
 
@@ -49,22 +54,30 @@ impl<Input: AudioInput> SampleRate for AudioInputSocket<Input> {
     }
 }
 
-impl<Input> BufferedInput<Input::Sample> for AudioInputSocket<Input>
+impl<Input> BackwardIndex<Input::Sample> for AudioInputSocket<Input>
 where
     Input: BufferedAudioInput,
 {
-    fn integer_sample(&self, index: usize) -> Input::Sample {
-        self.input.delayed_sample(self.channel, self.frame, index)
+    fn relative_sample(&self, frame: usize, source: usize, index: isize) -> Input::Sample {
+        self.input.buffered_sample(source, frame, index)
+    }
+
+    fn previous_frames(&self) -> usize {
+        self.input().max_delay_length()
     }
 }
-impl<Input> FractionalInput<Input::Sample, Input::Sample> for AudioInputSocket<Input>
+impl<Input> FractionalIndex<Input::Sample, Input::Sample> for AudioInputSocket<Input>
 where
     Input: FractionalAudioInput,
     Input::Sample: Copy + 'static + Mul<Output = Input::Sample>,
     usize: AsPrimitive<Input::Sample>,
 {
-    fn fractional_sample(&self, index: Input::Sample) -> Input::Sample {
-        self.input
-            .fractional_sample(self.channel, self.frame, index)
+    fn fractional_sample(
+        &self,
+        frame: usize,
+        source: usize,
+        index: Input::Sample,
+    ) -> Input::Sample {
+        self.input.fractional_sample(source, frame, index)
     }
 }

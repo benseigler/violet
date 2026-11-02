@@ -28,10 +28,7 @@ fn pan_law(pan_law: xpans_renderconfig::PanLaw) -> Box<dyn xpans_common_lr::PanL
 }
 
 pub trait BuildInterpreter<T> {
-    type Interpretation;
-    fn build_interpreter(
-        &self,
-    ) -> Box<dyn SourceInterpreter<T, Interpretation = Self::Interpretation>>;
+    fn build_interpreter(&self) -> Box<dyn SourceInterpreter<T>>;
 }
 
 pub trait BuildProcessor<In, Out>
@@ -39,8 +36,5 @@ where
     In: AudioInput,
     Out: AudioOutput,
 {
-    type Interpretation;
-    fn build_processor(
-        &self,
-    ) -> Box<dyn SampleProcessor<In, Out, Interpretation = Self::Interpretation> + Send>;
+    fn build_processor(&self) -> Box<dyn SampleProcessor<In, Out> + Send>;
 }

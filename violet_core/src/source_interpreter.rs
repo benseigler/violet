@@ -1,11 +1,18 @@
-use xpans_render::prelude::InterpretSource;
+use xpans_render::host::{InterpretSources, InterpretationInfo};
 
-use crate::Source;
+use crate::{
+    interpretation_storage::InterpretationStorage, spatial_input_socket::SpatialInputSocket,
+};
 
 /// Evaluates an audio source's properties into values used by a sample processor.
-pub trait SourceInterpreter<T>
+pub trait SourceInterpreter<In>
 where
-    Self: InterpretSource<Source<T>>,
+    Self: InterpretSources<SpatialInputSocket<In>, InterpretationStorage> + InterpretationInfo,
 {
 }
-impl<T, S> SourceInterpreter<S> for T where T: ?Sized + InterpretSource<Source<S>> {}
+impl<T, In> SourceInterpreter<In> for T where
+    T: ?Sized
+        + InterpretSources<SpatialInputSocket<In>, InterpretationStorage>
+        + InterpretationInfo
+{
+}

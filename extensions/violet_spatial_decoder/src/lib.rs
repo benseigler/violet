@@ -59,11 +59,14 @@ where
         self,
         write_capacity: usize,
     ) -> (SpatialDecoder<T>, SpatialDecoderTask<Scene, T>) {
-        let (reader, writer) = ring_buf(1, write_capacity);
+        let write_capacity_total = write_capacity * self.channel_count;
+        let (reader, writer) = ring_buf(0, write_capacity_total);
+        let write_capacity = writer.write_capacity();
         let decoder = SpatialDecoder {
             reader,
             sample_rate: self.sample_rate,
             channel_count: self.channel_count,
+            write_capacity_per_source: write_capacity,
         };
         let task = SpatialDecoderTask { writer, info: self };
         (decoder, task)
@@ -126,6 +129,7 @@ pub struct SpatialDecoder<T> {
     reader: RingReader<Source<T>>,
     sample_rate: u32,
     channel_count: usize,
+    write_capacity_per_source: usize,
 }
 
 impl<T: Default + Copy> Connector for SpatialDecoder<T> {
@@ -146,6 +150,10 @@ impl<T: Default + Copy> Connector for SpatialDecoder<T> {
             return None;
         }
         Some(reads_available)
+    }
+
+    fn max_frames_available(&self) -> usize {
+        self.write_capacity_per_source
     }
 }
 impl<T: Default + Copy> SpatialInput for SpatialDecoder<T> {

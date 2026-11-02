@@ -1,18 +1,17 @@
 use violet_core::{
     SampleProcessor, SourceInterpreter, audio_input::FractionalAudioInput,
-    audio_output::AudioOutput,
+    audio_output::AudioOutput, spatial_input::SpatialInput,
 };
 use xpans_headphones::{calculate_delay_samples, distance::DistanceCurve as DistanceCurveTrait};
 use xpans_renderconfig::headphones::{DistanceCurve, Headphones};
 
 use crate::{BuildInterpreter, BuildProcessor, GetDelaySamples, GetOutputChannels, pan_law};
 
-impl BuildInterpreter<f32> for Headphones {
-    type Interpretation = xpans_headphones::Interpretation<f32>;
-
-    fn build_interpreter(
-        &self,
-    ) -> Box<dyn SourceInterpreter<f32, Interpretation = Self::Interpretation>> {
+impl<In> BuildInterpreter<In> for Headphones
+where
+    In: SpatialInput<Scalar = f32>,
+{
+    fn build_interpreter(&self) -> Box<dyn SourceInterpreter<In>> {
         Box::new(xpans_headphones::Interpreter::new())
     }
 }
@@ -22,11 +21,7 @@ where
     In: FractionalAudioInput<Sample = f32>,
     Out: AudioOutput<Sample = f32>,
 {
-    type Interpretation = xpans_headphones::Interpretation<f32>;
-
-    fn build_processor(
-        &self,
-    ) -> Box<dyn SampleProcessor<In, Out, Interpretation = Self::Interpretation> + Send> {
+    fn build_processor(&self) -> Box<dyn SampleProcessor<In, Out> + Send> {
         let processor = xpans_headphones::Processor::new(
             pan_law(self.pan_law),
             self.max_itd_nanos,

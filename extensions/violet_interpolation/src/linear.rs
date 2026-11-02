@@ -57,6 +57,10 @@ where
     fn frames_available(&self) -> Option<usize> {
         self.input.frames_available()
     }
+    
+    fn max_frames_available(&self) -> usize {
+        self.input.max_frames_available()
+    }
 }
 impl<In: AudioInput> AudioInput for LinearInterpolator<In>
 where

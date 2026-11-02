@@ -14,6 +14,10 @@ pub trait Connector {
     per channel that this connector has the capacity to receive.
     */
     fn frames_available(&self) -> Option<usize>;
+
+    /// The maximum number of frames this connector will ever have available at a time.
+    /// `None` if infinite.
+    fn max_frames_available(&self) -> usize;
     /// The sample rate of the connector.
     fn sample_rate(&self) -> u32;
     /**
@@ -24,6 +28,15 @@ pub trait Connector {
     channels.
     */
     fn channel_count(&self) -> usize;
+
+    /**
+    This method is called on the connector whenever the renderer is about to
+    render a chunk of frames.
+
+    `frames` is the number of frames that the renderer is about to render.
+    */
+    #[allow(unused)]
+    fn prepare_chunk(&mut self, frames: usize) {}
     /**
     This method is called on the connector whenever the renderer has
     rendered a chunk of frames.
@@ -31,37 +44,11 @@ pub trait Connector {
     renderer.
     */
     fn advance(&mut self, frames: usize);
-    /**
-    This method is called on the connector before a frame is rendered.
-    It provides the relative frame that is about to be rendered.
-
-    `frame` is the *relative* frame within the current chunk of frames
-    being rendered at the time, or rather, the frame since the last time
-    `advance()` was called.
-    */
-    #[allow(unused)]
-    fn pre_frame(&mut self, frame: usize) {}
-    /**
-    This method is called on the connector after a frame is rendered.
-    It provides the relative frame that was just rendered.
-
-    `frame` is the *relative* frame within the current chunk of frames
-    being rendered at the time, or rather, the frame since the last time
-    `advance()` was called.
-    */
-    #[allow(unused)]
-    fn post_frame(&mut self, frame: usize) {}
 }
 impl<T> Connector for Box<T>
 where
     T: ?Sized + Connector,
 {
-    fn pre_frame(&mut self, frame: usize) {
-        self.as_mut().pre_frame(frame);
-    }
-    fn post_frame(&mut self, frame: usize) {
-        self.as_mut().post_frame(frame);
-    }
     fn sample_rate(&self) -> u32 {
         self.as_ref().sample_rate()
     }
@@ -73,5 +60,8 @@ where
     }
     fn frames_available(&self) -> Option<usize> {
         self.as_ref().frames_available()
+    }
+    fn max_frames_available(&self) -> usize {
+        self.as_ref().max_frames_available()
     }
 }
