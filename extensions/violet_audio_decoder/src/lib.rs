@@ -162,6 +162,10 @@ where
             self.read_next_packet()
         }
     }
+
+    fn max_frames_available(&self) -> usize {
+        1
+    }
 }
 
 impl<T: AudioDecoderSample> AudioInput for AudioDecoder<T> {

@@ -104,12 +104,15 @@ impl<T: Default + Copy + AddAssign> Connector for AudioEncoder<T> {
         self.channels as usize
     }
 
-    fn pre_frame(&mut self, frame: usize) {
-        for channel in 0..self.channel_count() {
-            let index = interleaved_index(self.channel_count(), frame, channel);
-            self.writer.write_forward(index, T::default());
+    fn prepare_chunk(&mut self, frames: usize) {
+        for frame in 0..frames {
+            for channel in 0..self.channel_count() {
+                let index = interleaved_index(self.channel_count(), frame, channel);
+                self.writer.write_forward(index, T::default());
+            }
         }
     }
+
     fn advance(&mut self, frames: usize) {
         self.writer
             .advance_write_position_by(frames * self.channel_count());
@@ -121,6 +124,10 @@ impl<T: Default + Copy + AddAssign> Connector for AudioEncoder<T> {
             return None;
         }
         Some(writes_available / self.channel_count())
+    }
+
+    fn max_frames_available(&self) -> usize {
+        self.writer.write_capacity() / self.channel_count()
     }
 }
 impl<T: Default + Copy + AddAssign> AudioOutput for AudioEncoder<T> {

@@ -49,6 +49,7 @@ where
     reader: MultiRingReader<S>,
     sample_rate: u32,
     lookahead_length: usize,
+    write_capacity: usize,
 }
 
 impl<S> AudioBuffer<S>
@@ -76,10 +77,13 @@ where
         reader.advance_read_position_by(read_capacity);
         writer.advance_write_position_by(read_capacity);
 
+        let write_capacity = writer.write_capacity();
+
         let input = Self {
             reader,
             sample_rate,
             lookahead_length,
+            write_capacity,
         };
         let task = AudioBufferTask::new(inner, writer, lookahead_length);
 
@@ -113,6 +117,10 @@ where
 
     fn advance(&mut self, frames: usize) {
         self.reader.advance_read_position_by(frames);
+    }
+
+    fn max_frames_available(&self) -> usize {
+        self.write_capacity - self.lookahead_length
     }
 }
 

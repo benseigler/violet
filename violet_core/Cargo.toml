@@ -11,6 +11,6 @@ authors = ["Ben Seigler"]
 
 [dependencies]
 num = "0.4.3"
-xpans_render = "0.1.0"
+xpans_render = { git = "https://github.com/xpans-audio/xpans_render.git" }
 xpans = "0.1.0"
 xpans_spe = "0.1.0"

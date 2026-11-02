@@ -15,11 +15,7 @@ impl GetOutputChannels for Mono {
 }
 
 impl<T> BuildInterpreter<T> for Mono {
-    type Interpretation = ();
-
-    fn build_interpreter(
-        &self,
-    ) -> Box<dyn violet_core::SourceInterpreter<T, Interpretation = Self::Interpretation>> {
+    fn build_interpreter(&self) -> Box<dyn violet_core::SourceInterpreter<T>> {
         Box::new(xpans_mono::Interpreter)
     }
 }
@@ -29,12 +25,7 @@ where
     In: AudioInput<Sample = f32>,
     Out: AudioOutput<Sample = f32>,
 {
-    type Interpretation = ();
-
-    fn build_processor(
-        &self,
-    ) -> Box<dyn violet_core::SampleProcessor<In, Out, Interpretation = Self::Interpretation> + Send>
-    {
+    fn build_processor(&self) -> Box<dyn violet_core::SampleProcessor<In, Out> + Send> {
         let processor = xpans_mono::Processor::new(self.channels);
         Box::new(processor)
     }

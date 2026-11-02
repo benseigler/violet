@@ -1,5 +1,3 @@
-use xpans_render::output::Output;
-
 use crate::audio_output::AudioOutput;
 
 /// Holds the audio output and additional state used to write samples to it.
@@ -8,7 +6,7 @@ where
     AudioOut: AudioOutput,
 {
     output: AudioOut,
-    pub(crate) frame: usize,
+    frames: usize,
 }
 
 impl<AudioOut> AudioOutputSocket<AudioOut>
@@ -16,7 +14,7 @@ where
     AudioOut: AudioOutput,
 {
     pub(crate) fn new(output: AudioOut) -> Self {
-        Self { output, frame: 0 }
+        Self { output, frames: 0 }
     }
     pub(crate) fn output(&self) -> &AudioOut {
         &self.output
@@ -24,12 +22,21 @@ where
     pub(crate) fn output_mut(&mut self) -> &mut AudioOut {
         &mut self.output
     }
+    pub(crate) fn set_frames(&mut self, frames: usize) {
+        self.frames = frames;
+    }
 }
-impl<AudioOut> Output<AudioOut::Sample> for AudioOutputSocket<AudioOut>
+impl<AudioOut> xpans_render::host::Output<AudioOut::Sample> for AudioOutputSocket<AudioOut>
 where
     AudioOut: AudioOutput,
 {
-    fn set_channel(&mut self, channel: usize, sample: AudioOut::Sample) {
-        self.output.set_sample(channel, self.frame, sample);
+    fn frames(&self) -> usize {
+        self.frames
+    }
+    fn channels(&self) -> usize {
+        self.output().channel_count()
+    }
+    fn set_channel(&mut self, frame: usize, channel: usize, sample: AudioOut::Sample) {
+        self.output.set_sample(channel, frame, sample);
     }
 }

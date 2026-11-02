@@ -12,8 +12,8 @@ authors = ["Ben Seigler"]
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 violet_core = { version = "0.1.0", path = "../../violet_core" }
-xpans_headphones = "0.1.0"
-xpans_stereo = "0.1.0"
-xpans_mono = "0.1.0"
+xpans_headphones = { git = "https://github.com/xpans-audio/render-modes.git" }
+xpans_stereo = { git = "https://github.com/xpans-audio/render-modes.git" }
+xpans_mono = { git = "https://github.com/xpans-audio/render-modes.git" }
 xpans_renderconfig = "0.1.0"
-xpans_common_lr = "0.1.0"
+xpans_common_lr = { git = "https://github.com/xpans-audio/render-modes.git" }
