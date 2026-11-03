@@ -1,4 +1,5 @@
 use crate::audio_output::AudioOutput;
+use core::num::NonZeroUsize;
 
 /// Holds the audio output and additional state used to write samples to it.
 pub struct AudioOutputSocket<AudioOut>
@@ -22,10 +23,11 @@ where
     pub(crate) fn output_mut(&mut self) -> &mut AudioOut {
         &mut self.output
     }
-    pub(crate) fn set_frames(&mut self, frames: usize) {
-        self.frames = frames;
+    pub(crate) fn set_frames(&mut self, frames: NonZeroUsize) {
+        self.frames = frames.get();
     }
 }
+
 impl<AudioOut> xpans_render::host::Output<AudioOut::Sample> for AudioOutputSocket<AudioOut>
 where
     AudioOut: AudioOutput,

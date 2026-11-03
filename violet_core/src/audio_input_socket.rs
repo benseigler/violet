@@ -1,3 +1,4 @@
+use core::num::NonZeroUsize;
 use std::ops::Mul;
 
 use num::cast::AsPrimitive;
@@ -27,9 +28,8 @@ where
     pub(crate) fn input_mut(&mut self) -> &mut Input {
         &mut self.input
     }
-
-    pub(crate) fn set_frames(&mut self, frames: usize) {
-        self.frames = frames;
+    pub(crate) fn set_frames(&mut self, frames: NonZeroUsize) {
+        self.frames = frames.get();
     }
 }
 
@@ -61,11 +61,11 @@ where
     fn relative_sample(&self, frame: usize, source: usize, index: isize) -> Input::Sample {
         self.input.buffered_sample(source, frame, index)
     }
-
     fn previous_frames(&self) -> usize {
         self.input().max_delay_length()
     }
 }
+
 impl<Input> FractionalIndex<Input::Sample, Input::Sample> for AudioInputSocket<Input>
 where
     Input: FractionalAudioInput,

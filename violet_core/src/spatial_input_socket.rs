@@ -1,3 +1,4 @@
+use core::num::NonZeroUsize;
 use xpans_render::mode::Sources;
 
 use crate::{Source, spatial_input::SpatialInput};
@@ -17,9 +18,8 @@ impl<Input> SpatialInputSocket<Input> {
     pub(crate) fn input_mut(&mut self) -> &mut Input {
         &mut self.input
     }
-
-    pub(crate) fn set_frames(&mut self, frames: usize) {
-        self.frames = frames;
+    pub(crate) fn set_frames(&mut self, frames: NonZeroUsize) {
+        self.frames = frames.get();
     }
 }
 

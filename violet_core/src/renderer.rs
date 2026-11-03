@@ -5,6 +5,8 @@ use crate::{
     spatial_input::SpatialInput, spatial_input_socket::SpatialInputSocket,
 };
 
+use core::num::NonZeroUsize;
+
 /**
 Renders spatial audio scenes.
 
@@ -46,12 +48,17 @@ where
             &mut self.audio_output,
         );
     }
-    /// Updates the frame number stored in the input and output sockets.
-    fn set_frames(&mut self, frames: usize) {
-        self.audio_input.set_frames(frames);
-        self.spatial_input.set_frames(frames);
-        self.interpretation_storage.set_frames(frames);
-        self.audio_output.set_frames(frames);
+    /**
+    Renders the given number of `frames` if they are greater than zero
+
+    Always returns `Some(frames)`.
+    */
+    fn render_if_nonzero(&mut self, frames: usize) -> Option<usize> {
+        NonZeroUsize::new(frames).map(|nonzero_frames| {
+            self.render_frames_unchecked(nonzero_frames);
+            nonzero_frames.get()
+        });
+        Some(frames)
     }
     /**
     Tries to render a single frame, returning `None` if that frame was not
@@ -70,11 +77,15 @@ where
     */
     pub fn render_frames(&mut self, frames: usize) -> Option<usize> {
         let frames = frames.min(self.frames_available()?);
-        if frames == 0 {
-            return Some(0);
-        }
-        self.render_frames_unchecked(frames);
-        Some(frames)
+        self.render_if_nonzero(frames)
+    }
+    /**
+    Renders the frames that are available for rendering, returning `None`
+    if no frames were available.
+    */
+    pub fn render_available_frames(&mut self) -> Option<usize> {
+        let frames = self.frames_available()?;
+        self.render_if_nonzero(frames)
     }
     /**
     Renders the given amount of frames without checking if that amount of
@@ -83,24 +94,12 @@ where
     Rendering more frames than are available can have wildly unpredictable
     results depending on the renderer's inputs and outputs.
     */
-    fn render_frames_unchecked(&mut self, frames: usize) {
+    fn render_frames_unchecked(&mut self, frames: NonZeroUsize) {
         self.set_frames(frames);
         self.prepare_chunk(frames);
         self.interpret_sources();
         self.process_samples();
         self.advance(frames);
-    }
-    /**
-    Renders the frames that are available for rendering, returning `None`
-    if no frames were available.
-    */
-    pub fn render_available_frames(&mut self) -> Option<usize> {
-        let frames = self.frames_available()?;
-        if frames == 0 {
-            return Some(0);
-        }
-        self.render_frames_unchecked(frames);
-        Some(frames)
     }
     /// Returns the number of audio sources in the rendering scene.
     pub fn source_count(&self) -> usize {
@@ -132,13 +131,22 @@ where
                 .min(available),
         )
     }
-    fn prepare_chunk(&mut self, frames: usize) {
+    /// Updates the frame number stored in the input and output sockets.
+    fn set_frames(&mut self, frames: NonZeroUsize) {
+        self.audio_input.set_frames(frames);
+        self.spatial_input.set_frames(frames);
+        self.interpretation_storage.set_frames(frames);
+        self.audio_output.set_frames(frames);
+    }
+    fn prepare_chunk(&mut self, frames: NonZeroUsize) {
+        let frames = frames.get();
         self.audio_input_mut().prepare_chunk(frames);
         self.spatial_input_mut().prepare_chunk(frames);
         self.audio_output_mut().prepare_chunk(frames);
     }
     /// Advances all connectors.
-    fn advance(&mut self, frames: usize) {
+    fn advance(&mut self, frames: NonZeroUsize) {
+        let frames = frames.get();
         self.audio_input_mut().advance(frames);
         self.spatial_input_mut().advance(frames);
         self.audio_output_mut().advance(frames);
@@ -147,7 +155,6 @@ where
     pub fn output_channels(&self) -> usize {
         self.audio_output().channel_count()
     }
-
     /// Returns an immutable reference to the audio input.
     pub fn audio_input(&self) -> &AudioIn {
         self.audio_input.input()
